@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div>Probando WebSocket</div>
+        <form action="IniciarDatos">
+            Tiempo en Segundos<input type="text" id="mensaje" value="5"/>
+            <input onclick="enviarMensaje();" value="Enviar Mensaje" type="button"/>
+            Recibido<input type="text" id="recibir"/><br>
+        </form><br>
+        <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+        <div id="chartContainer2" style="height: 370px; width: 100%;"></div>
+        <span id="timeToRender"></span>
+        <script src="js/canvasjs.min.js"></script>
+        <div ><p id="prueba"></p>puto</div>
+    </body>   
+    <script>
+        var dps = []; 
+        var dps2 = [];
+        var chart;
+        var xVal = 1;
+        var xVal2 = 1;
+        window.onload = function () {
+        chart = new CanvasJS.Chart("chartContainer", {
+                title :{
+                        text: "Cliente 2"
+                },
+                axisY: {
+                        includeZero: false
+                },      
+                data: [{
+                        type: "line",
+                        dataPoints: dps
+                }]
+            });
+            updateChart(xVal,0);
+            
+            chart2 = new CanvasJS.Chart("chartContainer2", {
+                title :{
+                        text: "Cliente 1"
+                },
+                axisY: {
+                        includeZero: false
+                },      
+                data: [{
+                        type: "line",
+                        dataPoints: dps2
+                }]
+            });
+            updateChart2(xVal2,0);
+        };
+
+        var updateChart = function (xVal,yVal) {
+
+                        yVal = yVal +  Math.sin(Math.PI*xVal);
+                        dps.push({
+                                x: xVal,
+                                y: yVal
+                        });
+                        xVal++;
+
+                chart.render();
+                return xVal;
+        };
+        
+        var updateChart2 = function (xVal,yVal) {
+
+                        yVal = yVal +  Math.sin(Math.PI*xVal);
+                        dps2.push({
+                                x: xVal,
+                                y: yVal
+                        });
+                        xVal++;
+
+                chart2.render();
+                return xVal;
+        };
+        
+        var websocket = new WebSocket("ws://localhost:8080/senal_websocket/Websocket");
+        var mensaje = document.getElementById("mensaje");
+        var enviar = document.getElementById("enviar");
+        var recibido = document.getElementById("recibir");
+        
+        websocket.onmessage = function processMessage(message){
+                var msj = message.data;
+                var pos = msj.lastIndexOf(":");
+                var res = msj.slice(pos+1);
+                var yVal = parseInt(res);
+                var sub_str = msj.substr(0,pos).trim();
+                if (sub_str === "Cliente 2"){
+                        xVal = updateChart(xVal,yVal);
+                }else if(sub_str === "Cliente 1"){
+                    xVal2 = updateChart2(xVal2,yVal);
+                }
+                
+        };
+        
+        function enviarMensaje(){
+            var text = "Iniciar:";
+            var tiempo = mensaje.value;
+            
+            websocket.send(text.concat(tiempo));
+            /*var json_prueba = [];
+            json_prueba.push("Temperatura");
+            
+            for(var i=0;i<7;i++){
+                json_prueba.push(i);
+            }
+            
+            //var json_parse = JSON.parse(json_prueba);
+            
+            websocket.send(json_prueba);*/
+        }
+    </script>
+</html>
